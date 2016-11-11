@@ -374,12 +374,12 @@ function pokemonLabel (name, rarity, types, disappearTime, id, latitude, longitu
 	<small>${typesDisplay}</small>
 	</div>
 	<div>`
-	if (valid === 1) {
-	  `Disappears at ${pad(disappearDate.getHours())}:${pad(disappearDate.getMinutes())}:${pad(disappearDate.getSeconds())}
-	  <span class='label-countdown' disappears-at='${disappearTime}'>(00m00s)</span>`
-	} else {
-	  `Disappear time unknown`
-	}`
+  if (valid === 1) {
+	`Disappears at ${pad(disappearDate.getHours())}:${pad(disappearDate.getMinutes())}:${pad(disappearDate.getSeconds())}
+	<span class='label-countdown' disappears-at='${disappearTime}'>(00m00s)</span>`
+} else {
+	'Disappear time unknown'
+}`
 	</div>
 	<div>
 	Location: ${latitude.toFixed(6)}, ${longitude.toFixed(7)}
