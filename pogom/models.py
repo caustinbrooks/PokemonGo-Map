@@ -831,7 +831,7 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                     diff = (nptime - db['last_modified']).total_seconds()  # compare the new pokemon discovery time to the database pokemon
                     diff = int(diff / 3600) + 1  # get how many full hours have elapsed since the old pokemon
                     d_t = db['disappear_time'] + timedelta(hours=diff)  # add an hour to the old time because we still need a future time
-                    valid = 1  # validate the timer 
+                    valid = 1  # validate the timer
                 except:
                     d_t = nptime + timedelta(minutes=15)
                     valid = 0  # invalidate the timer
