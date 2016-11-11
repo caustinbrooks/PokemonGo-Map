@@ -726,10 +726,10 @@ def construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid):
         'longitude': p['longitude'],
         'disappear_time': d_t,
     }
-    
+
     if valid > 0:
         pokemons[p['encounter_id']].update({
-            'valid': 1,   
+            'valid': 1,
         })
     else:
         pokemons[p['encounter_id']].update({
@@ -828,12 +828,12 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                 nptime = datetime.utcfromtimestamp(p['last_modified_timestamp_ms'] / 1000.0)
                 if query.count > 0:
                     db = query[0]
-                    diff = (nptime - db['last_modified']).total_seconds()   #compare the new discovery time to the db spawn
+                    diff = (nptime - db['last_modified']).total_seconds()  # compare the new discovery time to the db spawn
                     diff = int(diff / 3600) + 1  # get how many full hours have elapsed since the old time
                     d_t = db['disappear_time'] + timedelta(hours=diff)  # add an hour to the old time because we still need a future time
                     valid = 1  # validate the timer
                 else:
-                    d_t = nptime + timedelta(minutes=15) #assume 15 minutes
+                    d_t = nptime + timedelta(minutes=15)  # assume 15 minutes
                     valid = 0  # invalidate the timer
 
             printPokemon(p['pokemon_data']['pokemon_id'], p['latitude'],
