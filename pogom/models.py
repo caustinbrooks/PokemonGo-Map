@@ -717,7 +717,7 @@ def hex_bounds(center, steps):
     return (n, e, s, w)
 
 
-def construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid):
+def construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid, nptime):
     pokemons[p['encounter_id']] = {
         'encounter_id': b64encode(str(p['encounter_id'])),
         'spawnpoint_id': p['spawn_point_id'],
@@ -725,6 +725,7 @@ def construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid):
         'latitude': p['latitude'],
         'longitude': p['longitude'],
         'disappear_time': d_t,
+        'last_modified': nptime,
     }
 
     if valid > 0:
@@ -814,26 +815,25 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                 d_t = datetime.utcfromtimestamp(
                     (p['last_modified_timestamp_ms'] +
                      p['time_till_hidden_ms']) / 1000.0)
+                nptime = datetime.utcfromtimestamp(p['last_modified_timestamp_ms'] / 1000.0)
                 valid = 1
             else:
                 # lets grab the times from our database to compare to
-                query = (Pokemon
-                         .select(Pokemon.disappear_time, Pokemon.last_modified)  # we only need the times
-                         .where((Pokemon.spawnpoint_id == p['spawn_point_id']) & (Pokemon.disappear_time < datetime.utcnow()) & (Pokemon.valid == 1))  # grab matching spawn point ID with a valid timer
-                         .order_by(Pokemon.disappear_time.desc())  # sort by most recent
-                         .limit(1)  # we only want one
-                         .dicts())
-
-                # make this a datetime object now
                 nptime = datetime.utcfromtimestamp(p['last_modified_timestamp_ms'] / 1000.0)
-                if query.count > 0:
+                try:
+                    query = (Pokemon
+                             .select(Pokemon.disappear_time, Pokemon.last_modified)  # we only need the times
+                             .where((Pokemon.spawnpoint_id == p['spawn_point_id']) & (Pokemon.disappear_time < datetime.utcnow()) & (Pokemon.valid == 1))  # grab matching spawn point ID with a valid timer
+                             .order_by(Pokemon.disappear_time.desc())  # sort by most recent #we only want one
+                             .limit(1)
+                             .dicts())
                     db = query[0]
-                    diff = (nptime - db['last_modified']).total_seconds()  # compare the new discovery time to the db spawn
-                    diff = int(diff / 3600) + 1  # get how many full hours have elapsed since the old time
+                    diff = (nptime - db['last_modified']).total_seconds()  # compare the new pokemon discovery time to the database pokemon
+                    diff = int(diff / 3600) + 1  # get how many full hours have elapsed since the old pokemon
                     d_t = db['disappear_time'] + timedelta(hours=diff)  # add an hour to the old time because we still need a future time
-                    valid = 1  # validate the timer
-                else:
-                    d_t = nptime + timedelta(minutes=15)  # assume 15 minutes
+                    valid = 1  # validate the timer 
+                except:
+                    d_t = nptime + timedelta(minutes=15)
                     valid = 0  # invalidate the timer
 
             printPokemon(p['pokemon_data']['pokemon_id'], p['latitude'],
@@ -848,7 +848,7 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                                                  spawn_point_id=p['spawn_point_id'],
                                                  player_latitude=step_location[0],
                                                  player_longitude=step_location[1])
-            construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid)
+            construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid, nptime)
             if args.webhooks:
                 wh_update_queue.put(('pokemon', {
                     'encounter_id': b64encode(str(p['encounter_id'])),
@@ -1173,6 +1173,11 @@ def clean_db_loop(args):
                          .delete()
                          .where((Pokemon.disappear_time < datetime.utcnow()) &
                                 (Pokemon.valid < 1)))
+                query.execute()
+
+                query = (Pokemon
+                         .delete()
+                         .where(Pokemon.disappear_time > Pokemon.last_modified))
                 query.execute()
 
             log.info('Regular database cleaning complete')
