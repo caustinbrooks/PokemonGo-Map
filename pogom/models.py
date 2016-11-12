@@ -725,8 +725,9 @@ def construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid, nptime):
         'latitude': p['latitude'],
         'longitude': p['longitude'],
         'disappear_time': d_t,
-        'last_modified': nptime,
-        'valid': valid,
+        'last_modified': nptime,  # insert when the map discovered the pokemon
+        # Above line isn't necessary, but if there's network latency, or database locks, last_modified could end up being after despawn
+        'valid': valid,  # insert if the pokemon is valid or not
     }
 
     if encounter_result is not None and 'wild_pokemon' in encounter_result['responses']['ENCOUNTER']:
@@ -823,9 +824,9 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                     diff = (nptime - db['last_modified']).total_seconds()  # compare the new pokemon discovery time to the database pokemon
                     diff = int(diff / 3600) + 1  # get how many full hours have elapsed since the old pokemon
                     d_t = db['disappear_time'] + timedelta(hours=diff)  # add an hour to the old time because we still need a future time
-                    if (d_t - nptime).total_seconds() > 3600:
-                        diff = int(((d_t - nptime).total_seconds) / 3600)
-                        d_t = d_t - timedelta(hours=diff)
+                    if (d_t - nptime).total_seconds() > 3600:  # is the despawn time longer than 1 hour?
+                        diff = int(((d_t - nptime).total_seconds) / 3600)  # how many hours between discovery and despawn?
+                        d_t = d_t - timedelta(hours=diff)  # subtract enough that we get a < 1 hour spawn
                     valid = 1  # validate the timer
                 except:
                     d_t = nptime + timedelta(minutes=15)
@@ -843,7 +844,7 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                                                  spawn_point_id=p['spawn_point_id'],
                                                  player_latitude=step_location[0],
                                                  player_longitude=step_location[1])
-            construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid, nptime)
+            construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid, nptime)  # sending validity to construct_pokemon_dict
             if args.webhooks:
                 wh_update_queue.put(('pokemon', {
                     'encounter_id': b64encode(str(p['encounter_id'])),
@@ -1177,9 +1178,9 @@ def clean_db_loop(args):
                          .where(Pokemon.disappear_time < Pokemon.last_modified))
                 query.execute()
 
-                # Delete all pokemon with disappear time
-                # If you dont want 1h+ pokemon uglifying your database, use this query:
-                # FROM pokemon WHERE (UNIX_TIMESTAMP(disappear_time) - UNIX_TIMESTAMP(last_modified)) > 3600
+                # Delete all pokemon with disappear time earlier than discovery time
+                # If you dont want 1h+ pokemon uglifying your database, use this query to delete them:
+                # DELETE * FROM pokemon WHERE (UNIX_TIMESTAMP(disappear_time) - UNIX_TIMESTAMP(last_modified)) > 3600
 
             log.info('Regular database cleaning complete')
             time.sleep(60)
