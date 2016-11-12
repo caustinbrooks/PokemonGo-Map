@@ -362,57 +362,37 @@ function pokemonLabel (name, rarity, types, disappearTime, id, latitude, longitu
       </div>
       `
   }
+  var dstime = ''
+
   if (valid > 0) {
-	var contentstring = `
-		<div>
-		<b>${name}</b>
-		<span> - </span>
-		<small>
-			<a href='http://www.pokemon.com/us/pokedex/${id}' target='_blank' title='View in Pokedex'>#${id}</a>
-		</small>
-		<span> ${rarityDisplay}</span>
-		<span> - </span>
-		<small>${typesDisplay}</small>
-		</div>
-		<div>
-		Disappears at ${pad(disappearDate.getHours())}:${pad(disappearDate.getMinutes())}:${pad(disappearDate.getSeconds())}
-		<span class='label-countdown' disappears-at='${disappearTime}'>(00m00s)</span>
-		</div>
-		<div>
-		Location: ${latitude.toFixed(6)}, ${longitude.toFixed(7)}
-		</div>
-		${details}
-		<div>
-		<a href='javascript:excludePokemon(${id})'>Exclude</a>&nbsp;&nbsp
-		<a href='javascript:notifyAboutPokemon(${id})'>Notify</a>&nbsp;&nbsp
-		<a href='javascript:void(0);' onclick='javascript:openMapDirections(${latitude},${longitude});' title='View in Maps'>Get directions</a>
-		</div>`
-  }  else {
-		var contentstring = `
-		<div>
-		<b>${name}</b>
-		<span> - </span>
-		<small>
-			<a href='http://www.pokemon.com/us/pokedex/${id}' target='_blank' title='View in Pokedex'>#${id}</a>
-		</small>
-		<span> ${rarityDisplay}</span>
-		<span> - </span>
-		<small>${typesDisplay}</small>
-		</div>
-		<div>
-		Disappear time unknown
-		</div>
-		<div>
-		Location: ${latitude.toFixed(6)}, ${longitude.toFixed(7)}
-		</div>
-		${details}
-		<div>
-		<a href='javascript:excludePokemon(${id})'>Exclude</a>&nbsp;&nbsp
-		<a href='javascript:notifyAboutPokemon(${id})'>Notify</a>&nbsp;&nbsp
-		<a href='javascript:void(0);' onclick='javascript:openMapDirections(${latitude},${longitude});' title='View in Maps'>Get directions</a>
-		</div>`
-	}  return contentstring
-}
+    dstime = `<div>Disappears at ${pad(disappearDate.getHours())}:${pad(disappearDate.getMinutes())}:${pad(disappearDate.getSeconds())}<span class='label-countdown' disappears-at='${disappearTime}'>(00m00s)</span></div>`
+  } else {
+    dstime = `<div>Disappear time unknown</div>`
+  }
+
+   var contentstring = `
+      <div>
+        <b>${name}</b>
+       <span> - </span>
+       <small>
+         <a href='http://www.pokemon.com/us/pokedex/${id}' target='_blank' title='View in Pokedex'>#${id}</a>
+       </small>
+        <span> ${rarityDisplay}</span>
+        <span> - </span>
+        <small>${typesDisplay}</small>
+    </div>` + detime + `
+      <div>
+        Location: ${latitude.toFixed(6)}, ${longitude.toFixed(7)}
+      </div>
+       ${details}
+     <div>
+       <a href='javascript:excludePokemon(${id})'>Exclude</a>&nbsp;&nbsp
+       <a href='javascript:notifyAboutPokemon(${id})'>Notify</a>&nbsp;&nbsp
+       <a href='javascript:removePokemonMarker("${encounterId}")'>Remove</a>&nbsp;&nbsp
+       <a href='javascript:void(0);' onclick='javascript:openMapDirections(${latitude},${longitude});' title='View in Maps'>Get directions</a>
+     </div>`
+   return contentstring
+ }
 
 function gymLabel (teamName, teamId, gymPoints, latitude, longitude, lastScanned = null, name = null, members = []) {
   var memberStr = ''
