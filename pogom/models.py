@@ -1164,24 +1164,6 @@ def clean_db_loop(args):
                                 (datetime.utcnow() - timedelta(hours=args.purge_data)))))
                 query.execute()
 
-            if args.delete_invalid:
-                # Delete all pokemon that have despawned and have an invalid timer
-                query = (Pokemon
-                         .delete()
-                         .where((Pokemon.disappear_time < datetime.utcnow()) &
-                                (Pokemon.valid < 1)))
-                query.execute()
-
-                # Delete all pokemon that have a despawn timer that's earlier than when it went into the database
-                query = (Pokemon
-                         .delete()
-                         .where(Pokemon.disappear_time < Pokemon.last_modified))
-                query.execute()
-
-                # Delete all pokemon with disappear time earlier than discovery time
-                # If you dont want 1h+ pokemon uglifying your database, use this query to delete them:
-                # DELETE * FROM pokemon WHERE (UNIX_TIMESTAMP(disappear_time) - UNIX_TIMESTAMP(last_modified)) > 3600
-
             log.info('Regular database cleaning complete')
             time.sleep(60)
         except Exception as e:
