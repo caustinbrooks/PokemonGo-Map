@@ -726,16 +726,8 @@ def construct_pokemon_dict(pokemons, p, encounter_result, d_t, valid, nptime):
         'longitude': p['longitude'],
         'disappear_time': d_t,
         'last_modified': nptime,
+        'valid': valid,
     }
-
-    if valid > 0:
-        pokemons[p['encounter_id']].update({
-            'valid': 1,
-        })
-    else:
-        pokemons[p['encounter_id']].update({
-            'valid': 0,
-        })
 
     if encounter_result is not None and 'wild_pokemon' in encounter_result['responses']['ENCOUNTER']:
         pokemon_info = encounter_result['responses']['ENCOUNTER']['wild_pokemon']['pokemon_data']
@@ -797,7 +789,7 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
         # For all the wild pokemon we found check if an active pokemon is in the database
         query = (Pokemon
                  .select(Pokemon.encounter_id, Pokemon.spawnpoint_id)
-                 .where((Pokemon.disappear_time > datetime.utcnow()) & (Pokemon.encounter_id << encounter_ids) & (Pokemon.valid == 1))
+                 .where((Pokemon.disappear_time > datetime.utcnow()) & (Pokemon.encounter_id << encounter_ids))
                  .dicts())
 
         # Store all encounter_ids and spawnpoint_id for the pokemon in query (all thats needed to make sure its unique)
@@ -808,13 +800,6 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                 # If pokemon has been encountered before dont process it.
                 skipped += 1
                 continue
-            else:
-                query = (Pokemon
-                     .delete()
-                     .where((Pokemon.encounter_id == p['encounter_id']) &
-                            (Pokemon.spawnpoint_id == p['spawnpoint_id']) &
-                            (Pokemon.valid == 0)))
-                query.execute()
 
             # time_till_hidden_ms was overflowing causing a negative integer.
             # It was also returning a value above 3.6M ms.
@@ -830,7 +815,7 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                 try:
                     query = (Pokemon
                              .select(Pokemon.disappear_time, Pokemon.last_modified)  # we only need the times
-                             .where((Pokemon.spawnpoint_id == p['spawn_point_id']) & (Pokemon.disappear_time < datetime.utcnow()) & (Pokemon.valid == 1))  # grab matching spawn point ID with a valid timer
+                             .where((Pokemon.spawnpoint_id == p['spawn_point_id']) & (Pokemon.disappear_time < nptime) & (Pokemon.valid == 1))  # grab old spawn point ID with a valid timer
                              .order_by(Pokemon.disappear_time.desc())  # sort by most recent
                              .limit(1)  # we only want one
                              .dicts())
@@ -838,9 +823,9 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
                     diff = (nptime - db['last_modified']).total_seconds()  # compare the new pokemon discovery time to the database pokemon
                     diff = int(diff / 3600) + 1  # get how many full hours have elapsed since the old pokemon
                     d_t = db['disappear_time'] + timedelta(hours=diff)  # add an hour to the old time because we still need a future time
-                    if (d_t - nptime).total_seconds() > 3600:  # check spawn time to see if its longer than an hour
-                        diff = int(((d_t - nptime).total_seconds) / 3600)  # check how many hours in case we compared with a 2 hour spawn
-                        d_t = d_t - timedelta(hours=diff)  # subtract hours until we're less than an hour difference
+                    if (d_t - nptime).total_seconds() > 3600:
+                        diff = int(((d_t - nptime).total_seconds) / 3600)
+                        d_t = d_t - timedelta(hours=diff)
                     valid = 1  # validate the timer
                 except:
                     d_t = nptime + timedelta(minutes=15)
@@ -1191,7 +1176,7 @@ def clean_db_loop(args):
                          .delete()
                          .where(Pokemon.disappear_time < Pokemon.last_modified))
                 query.execute()
-                
+
                 # Delete all pokemon with disappear time
                 # If you dont want 1h+ pokemon uglifying your database, use this query:
                 # FROM pokemon WHERE (UNIX_TIMESTAMP(disappear_time) - UNIX_TIMESTAMP(last_modified)) > 3600
