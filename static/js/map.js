@@ -362,12 +362,11 @@ function pokemonLabel (name, rarity, types, disappearTime, id, latitude, longitu
       </div>
       `
   }
-  var dstime = ''
 
   if (valid > 0) {
-    dstime = `<div>Disappears at ${pad(disappearDate.getHours())}:${pad(disappearDate.getMinutes())}:${pad(disappearDate.getSeconds())}<span class='label-countdown' disappears-at='${disappearTime}'>(00m00s)</span></div>`
+    var dstime = `<div>Disappears at ${pad(disappearDate.getHours())}:${pad(disappearDate.getMinutes())}:${pad(disappearDate.getSeconds())}<span class='label-countdown' disappears-at='${disappearTime}'>(00m00s)</span></div>`
   } else {
-    dstime = `<div>Disappear time unknown</div>`
+    var dstime = `<div>Disappear time unknown</div>`
   }
 
   var contentstring = `
