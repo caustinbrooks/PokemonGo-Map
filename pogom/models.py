@@ -1170,7 +1170,7 @@ def clean_db_loop(args):
                          .where((Pokemon.disappear_time < datetime.utcnow()) &
                                 (Pokemon.valid < 1)))
                 query.execute()
-                
+
                 # Delete all pokemon that have a despawn timer that's earlier than when it went into the database
                 query = (Pokemon
                          .delete()
