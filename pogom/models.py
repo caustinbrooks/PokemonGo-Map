@@ -786,19 +786,19 @@ def parse_map(args, map_dict, step_location, db_update_queue, wh_update_queue, a
 
     if pokesfound:
         encounter_ids = [b64encode(str(p['encounter_id'])) for p in wild_pokemon]
-        # For all the wild pokemon we found check if an active pokemon is in the database
+        # For all the wild pokemon we found check if an active valid pokemon is in the database
         query = (Pokemon
                  .select(Pokemon.encounter_id, Pokemon.spawnpoint_id)
-                 .where((Pokemon.disappear_time > datetime.utcnow()) & (Pokemon.encounter_id << encounter_ids))
-                 .dicts())
+                 .where((Pokemon.disappear_time > datetime.utcnow()) & (Pokemon.encounter_id << encounter_ids) & (Pokemon.valid > 0))
+                 .dicts())  # above: Pokemon.valid > 0 just gets active, VALID pokemon in the database
 
         # Store all encounter_ids and spawnpoint_id for the pokemon in query (all thats needed to make sure its unique)
         encountered_pokemon = [(p['encounter_id'], p['spawnpoint_id']) for p in query]
 
         for p in wild_pokemon:
             if (b64encode(str(p['encounter_id'])), p['spawn_point_id']) in encountered_pokemon:
-                # If pokemon has been encountered before dont process it.
-                skipped += 1
+                # If pokemon has been encountered before and is already valid, dont process it.
+                skipped += 1  # Leaving this here, if we have a valid active pokemon, there's no need to update it.
                 continue
 
             # time_till_hidden_ms was overflowing causing a negative integer.
