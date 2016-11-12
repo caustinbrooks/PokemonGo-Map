@@ -370,7 +370,7 @@ function pokemonLabel (name, rarity, types, disappearTime, id, latitude, longitu
     dstime = `<div>Disappear time unknown</div>`
   }
 
-   var contentstring = `
+  var contentstring = `
       <div>
         <b>${name}</b>
        <span> - </span>
@@ -380,7 +380,7 @@ function pokemonLabel (name, rarity, types, disappearTime, id, latitude, longitu
         <span> ${rarityDisplay}</span>
         <span> - </span>
         <small>${typesDisplay}</small>
-    </div>` + detime + `
+    </div>` + dstime + `
       <div>
         Location: ${latitude.toFixed(6)}, ${longitude.toFixed(7)}
       </div>
@@ -391,8 +391,8 @@ function pokemonLabel (name, rarity, types, disappearTime, id, latitude, longitu
        <a href='javascript:removePokemonMarker("${encounterId}")'>Remove</a>&nbsp;&nbsp
        <a href='javascript:void(0);' onclick='javascript:openMapDirections(${latitude},${longitude});' title='View in Maps'>Get directions</a>
      </div>`
-   return contentstring
- }
+  return contentstring
+}
 
 function gymLabel (teamName, teamId, gymPoints, latitude, longitude, lastScanned = null, name = null, members = []) {
   var memberStr = ''
